@@ -81,12 +81,22 @@ coverage for the parts that were previously only tested by hand.
   `public/` into the bundle. The old build script did it with `cp -r`, which
   failed on Windows. `scripts/build.mjs` now does it portably, and also copies
   the Prisma query engine and the generated client into the bundle.
+- **The production build could not reach the database.** The generated Prisma
+  client resolves the schema through a path relative to its own location
+  (`../../../prisma`), which from inside the standalone bundle lands on
+  `.next/standalone/prisma` — a directory the build never created. Every query
+  failed with *"Unable to open the database file"*. The build now copies
+  `prisma/` into the bundle, and `npm start` resolves a relative `file:`
+  `DATABASE_URL` to an absolute path so the database location no longer
+  depends on where the bundle sits.
 - The Docker stack never created the SQLite database, so the app started with
   no tables and the gateway never became healthy. A `db-init` service now
   prepares the database before the app starts.
 - In Docker Compose the gateway resolved `localhost:3000`, which pointed at
   the gateway container itself. The upstreams are now configurable so the
   services can reach each other by name.
+- The CI workflow only set `DATABASE_URL` and `NEXTAUTH_SECRET` on the build
+  step, so the production server started without them. They are now job-level.
 
 ## [1.0.0] — 2026-10-20
 
