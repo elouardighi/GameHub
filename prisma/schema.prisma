@@ -1,0 +1,300 @@
+// GameHub - Discord-like Gaming Platform Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String    @default("demo")
+  passwordHash  String?
+  avatarColor   String    @default("#5865F2")
+  status        String    @default("online") // online, idle, dnd, offline
+  customStatus  String?
+  bio           String?
+  bannerColor   String    @default("#5865F2")
+  settings      String?
+  gameHubCoins  Int      @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships  Member[]
+  ownedServers Server[]
+  ownedClans   Clan[]
+  messages     Message[]
+  reactions    Reaction[]
+  threads      Thread[]
+  friends      Friendship[] @relation("FriendshipRequester")
+  friendOf     Friendship[] @relation("FriendshipAddressee")
+  voiceStates  VoiceState[]
+  clanMemberships ClanMember[]
+  questProgress QuestProgress[]
+  activities   ActivityParticipant[]
+  clanApplications ClanApplication[]
+
+  @@map("users")
+}
+
+model Server {
+  id          String   @id @default(cuid())
+  name        String
+  iconColor   String   @default("#5865F2")
+  bannerColor String?
+  description String?
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  inviteCode  String   @unique @default(cuid())
+  isPublic    Boolean  @default(false)
+  verified    Boolean  @default(false)
+  partnered   Boolean  @default(false)
+  memberCount Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     Member[]
+  channels    Channel[]
+  roles       Role[]
+
+  @@map("servers")
+}
+
+model Clan {
+  // Discord's Guilds feature: exclusive application-based gaming communities, max 200 members
+  id            String   @id @default(cuid())
+  name          String
+  tag           String   @unique // 1-4 char tag members wear everywhere
+  badgeColor   String   @default("#5865F2")
+  bannerColor  String   @default("#5865F2")
+  bannerStyle  String   @default("Mesh") // Night Sky, Castle, World Map, Sea Foam, Warp, House, Pulsar, Mesh, Spatter
+  description  String
+  ownerId       String
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  inviteCode    String   @unique @default(cuid())
+  games         String   @default("Valorant, League of Legends")
+  playstyle     String   @default("Hardcore") // Very Casual, Casual, Hardcore, Very Hardcore
+  minAge        Int      @default(16)
+  memberCount   Int      @default(1)
+  applicationQuestion String @default("Why do you want to join this clan?")
+  createdAt     DateTime @default(now())
+
+  members       ClanMember[]
+  applications  ClanApplication[]
+  @@map("clans")
+}
+
+model ClanApplication {
+  id          String   @id @default(cuid())
+  clanId      String
+  userId      String
+  answer      String
+  status      String   @default("pending") // pending, accepted, rejected
+  createdAt   DateTime @default(now())
+  reviewedAt DateTime?
+
+  clan        Clan     @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([clanId, userId])
+  @@map("clan_applications")
+}
+
+model ClanMember {
+  id        String   @id @default(cuid())
+  clanId    String
+  userId    String
+  role      String   @default("Member") // Leader, Officer, Member
+  joinedAt  DateTime @default(now())
+
+  clan      Clan     @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([clanId, userId])
+  @@map("clan_members")
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  serverId  String
+  userId    String
+  nickname  String?
+  joinedAt  DateTime @default(now())
+  isOwner   Boolean  @default(false)
+
+  server    Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([serverId, userId])
+  @@map("members")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  serverId    String
+  name        String
+  color       String   @default("#99aab5")
+  position    Int      @default(0)
+  permissions String   @default("[]")
+  isDefault   Boolean  @default(false)
+  mentionable Boolean  @default(true)
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  @@map("roles")
+}
+
+model Channel {
+  id          String   @id @default(cuid())
+  serverId    String
+  name        String
+  type        String   @default("text") // text, voice, stage, forum, announcement, rules
+  topic       String?
+  categoryId  String?
+  position    Int      @default(0)
+  isPrivate   Boolean  @default(false)
+  userLimit   Int? // voice channels
+  bitrate     Int      @default(64000)
+  createdAt   DateTime @default(now())
+
+  server      Server   @relation(fields: [serverId], references: [id], onDelete: Cascade)
+  messages    Message[]
+  threads     Thread[]
+  voiceStates VoiceState[]
+  @@map("channels")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  channelId    String
+  userId       String
+  content      String
+  attachments  String?  // JSON string
+  embeds       String?  // JSON string
+  isPinned     Boolean  @default(false)
+  isEdited     Boolean  @default(false)
+  threadId     String?
+  replyToId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  channel      Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions    Reaction[]
+  thread       Thread? @relation(fields: [threadId], references: [id])
+  @@map("messages")
+}
+
+model Reaction {
+  id         String   @id @default(cuid())
+  messageId  String
+  userId     String
+  emoji      String
+  createdAt  DateTime @default(now())
+
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([messageId, userId, emoji])
+  @@map("reactions")
+}
+
+model Thread {
+  id          String   @id @default(cuid())
+  channelId   String
+  name        String
+  ownerId     String
+  isLocked    Boolean  @default(false)
+  isArchived   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  channel     Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  owner       User     @relation(fields: [ownerId], references: [id])
+  messages    Message[]
+  @@map("threads")
+}
+
+model Friendship {
+  id           String   @id @default(cuid())
+  requesterId  String
+  addresseeId  String
+  status       String   @default("pending") // pending, accepted, blocked
+  createdAt    DateTime @default(now())
+
+  requester    User     @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee    User     @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
+}
+
+model VoiceState {
+  // Tracks who's currently in which voice/stage channel
+  id         String   @id @default(cuid())
+  userId     String
+  channelId  String
+  serverId   String
+  muted      Boolean  @default(false)
+  deafened   Boolean  @default(false)
+  videoOn    Boolean  @default(false)
+  streaming  Boolean  @default(false)
+  speaking   Boolean  @default(false)
+  isSpeaker  Boolean  @default(true) // for stage channels
+  joinedAt   DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel    Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  @@unique([userId, channelId])
+  @@map("voice_states")
+}
+
+model Quest {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  game        String
+  reward      String
+  pointsReward Int    @default(100)
+  progressGoal Int     @default(100)
+  createdAt   DateTime @default(now())
+
+  progress    QuestProgress[]
+  @@map("quests")
+}
+
+model QuestProgress {
+  id          String   @id @default(cuid())
+  questId     String
+  userId      String
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+
+  quest       Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([questId, userId])
+  @@map("quest_progress")
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  emoji       String   @default("🎮")
+  category    String   @default("Games") // Games, Watch, Listen, Play
+  maxPlayers  Int      @default(8)
+  createdAt   DateTime @default(now())
+
+  participants ActivityParticipant[]
+  @@map("activities")
+}
+
+model ActivityParticipant {
+  id          String   @id @default(cuid())
+  activityId  String
+  userId      String
+  joinedAt    DateTime @default(now())
+
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([activityId, userId])
+  @@map("activity_participants")
+}

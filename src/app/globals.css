@@ -1,0 +1,378 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============================================================
+   "HEARTH" THEME — warm honey + maroon on dark brown
+   Novel top-nav layout (no left sidebar like Discord/Teams)
+   ============================================================ */
+:root,
+.dark {
+  --radius: 0.5rem;
+
+  /* Background layers (warm dark browns, NOT black) */
+  --bg-deepest: #1a1310;       /* top nav, input fields */
+  --bg-dark: #241b16;          /* sub-nav, member list */
+  --bg-main: #2e2520;          /* main content area */
+  --bg-card: #3d302a;          /* cards, popovers */
+  --bg-raised: #4a3a30;         /* hover, raised */
+  --bg-input: #1a1310;         /* input backgrounds */
+
+  --background: var(--bg-main);
+  --foreground: #f5e6c8;       /* warm cream */
+  --card: var(--bg-card);
+  --card-foreground: #f5e6c8;
+  --popover: var(--bg-card);
+  --popover-foreground: #f5e6c8;
+
+  /* Primary = Honey gold (replaces Discord blurple) */
+  --primary: #d4a03a;
+  --primary-foreground: #1a1310;
+
+  /* Secondary = Maroon */
+  --secondary: #8b3a3a;
+  --secondary-foreground: #f5e6c8;
+
+  --muted: #3d302a;
+  --muted-foreground: #a89678;  /* warm muted tan */
+
+  --accent: #4a3a30;
+  --accent-foreground: #f5e6c8;
+
+  --destructive: #b04a4a;      /* bright maroon for danger */
+
+  --border: #4a3a30;
+  --input: #1a1310;
+  --ring: #d4a03a;             /* honey ring for focus */
+
+  /* Status colors (warm) */
+  --status-online: #8bb04a;    /* olive green */
+  --status-idle: #d4a03a;      /* honey */
+  --status-dnd: #b04a4a;       /* bright maroon */
+  --status-offline: #5a4a40;   /* muted brown */
+
+  /* Brand tokens */
+  --honey: #d4a03a;
+  --honey-bright: #e8c159;
+  --honey-dim: #b08530;
+  --maroon: #8b3a3a;
+  --maroon-bright: #b04a4a;
+  --maroon-deep: #6b2c2c;
+
+  /* Chart colors */
+  --chart-1: #d4a03a;
+  --chart-2: #8b3a3a;
+  --chart-3: #8bb04a;
+  --chart-4: #e8c159;
+  --chart-5: #b04a4a;
+
+  --sidebar: var(--bg-dark);
+  --sidebar-foreground: #f5e6c8;
+  --sidebar-primary: #d4a03a;
+  --sidebar-primary-foreground: #1a1310;
+  --sidebar-accent: #4a3a30;
+  --sidebar-accent-foreground: #f5e6c8;
+  --sidebar-border: #4a3a30;
+  --sidebar-ring: #d4a03a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background: var(--bg-main);
+  }
+  /* Subtle warm gradient backdrop for the whole app */
+  #gamehub-root {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(212, 160, 58, 0.04), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 100%, rgba(139, 58, 58, 0.05), transparent 60%),
+      var(--bg-main);
+  }
+}
+
+/* ============================================================
+   Custom utilities — Hearth theme
+   ============================================================ */
+
+/* Thin warm scrollbar */
+.gh-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.gh-scroll::-webkit-scrollbar-track { background: transparent; }
+.gh-scroll::-webkit-scrollbar-thumb {
+  background: var(--bg-raised);
+  border-radius: 4px;
+}
+.gh-scroll::-webkit-scrollbar-thumb:hover { background: var(--honey-dim); }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
+/* Server pill (top nav, NOT left rail) */
+.server-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.server-pill:hover {
+  background: var(--bg-raised);
+  color: var(--foreground);
+}
+.server-pill.is-active {
+  background: linear-gradient(135deg, rgba(212, 160, 58, 0.18), rgba(139, 58, 58, 0.12));
+  color: var(--honey-bright);
+  border: 1px solid rgba(212, 160, 58, 0.4);
+}
+.server-pill .server-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Channel tab (browser-tab style) */
+.channel-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px 6px 0 0;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.channel-tab:hover {
+  background: var(--bg-raised);
+  color: var(--foreground);
+}
+.channel-tab.is-active {
+  color: var(--honey-bright);
+  border-bottom-color: var(--honey);
+  background: rgba(212, 160, 58, 0.08);
+}
+.channel-tab.is-voice-connected {
+  color: var(--status-online);
+  border-bottom-color: var(--status-online);
+}
+
+/* Reaction pill */
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.reaction-pill:hover { background: var(--bg-card); }
+.reaction-pill.reacted-by-me {
+  background: rgba(212, 160, 58, 0.15);
+  border-color: var(--honey);
+  color: var(--honey-bright);
+}
+
+/* Voice tile (campfire circular layout) */
+.voice-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-raised));
+  border: 2px solid var(--border);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+.voice-tile.is-speaking {
+  border-color: var(--status-online);
+  box-shadow: 0 0 0 4px rgba(139, 176, 74, 0.25), 0 0 20px rgba(139, 176, 74, 0.4);
+}
+.voice-tile.is-streaming {
+  border-color: var(--maroon-bright);
+  box-shadow: 0 0 0 4px rgba(176, 74, 74, 0.25);
+}
+.voice-tile.has-video {
+  border-radius: 16px; /* video tiles are square-ish */
+}
+
+/* Audio level bars (campfire-style: bars around the avatar) */
+.audio-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 20px;
+}
+.audio-bars .bar {
+  width: 3px;
+  background: var(--status-online);
+  border-radius: 2px;
+  transition: height 0.05s ease-out;
+}
+
+/* Online status dot pulse */
+@keyframes pulse-online {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  50% { box-shadow: 0 0 0 4px transparent; }
+}
+.pulse-online {
+  animation: pulse-online 2s ease-in-out infinite;
+  color: var(--status-online);
+}
+
+/* Message fade-in */
+@keyframes msg-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg-fade-in { animation: msg-fade-in 0.2s ease-out; }
+
+/* Typing dots */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+.typing-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--muted-foreground);
+  animation: typing-bounce 1.4s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Top nav gradient (subtle) */
+.top-nav-bg {
+  background: linear-gradient(180deg, var(--bg-deepest) 0%, var(--bg-dark) 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Tooltip */
+.gh-tooltip {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  font-size: 12px;
+}
+
+/* Hearth glow accent (decorative) */
+.hearth-glow {
+  background: radial-gradient(circle, rgba(212, 160, 58, 0.15) 0%, transparent 70%);
+}
+
+/* Pill shimmer (for active server) */
+@keyframes honey-shimmer {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 58, 0.3); }
+  50% { box-shadow: 0 0 0 3px rgba(212, 160, 58, 0.15); }
+}
+.honey-shimmer { animation: honey-shimmer 3s ease-in-out infinite; }
+
+/* Maroon button (secondary action) */
+.btn-maroon {
+  background: var(--maroon);
+  color: var(--foreground);
+}
+.btn-maroon:hover { background: var(--maroon-bright); }
+
+/* Honey button (primary action) */
+.btn-honey {
+  background: var(--honey);
+  color: var(--bg-deepest);
+  font-weight: 600;
+}
+.btn-honey:hover { background: var(--honey-bright); }
+
+/* Campfire voice ring container */
+.campfire-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.campfire-ring .ring-center {
+  position: absolute;
+  inset: 25%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 160, 58, 0.15) 0%, transparent 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* Voice channel circular arrangement: use CSS transforms */
+.voice-grid-campfire {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/10;
+  max-height: 70vh;
+}
+.voice-grid-campfire .voice-tile-campfire {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(-50%, -50%);
+}
