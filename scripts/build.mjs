@@ -60,7 +60,8 @@ if (existsSync(publicSrc)) {
 }
 
 // The standalone bundle ships a minimal node_modules; the Prisma engine and
-// the generated client live in the root install and must be copied over.
+// the generated client live in the root install. Next.js usually traces them
+// in, but copy them anyway so the bundle works on every platform.
 step("Copying the Prisma engine and generated client");
 let copied = 0;
 for (const pkg of ["@prisma", ".prisma"]) {
@@ -72,8 +73,21 @@ for (const pkg of ["@prisma", ".prisma"]) {
 if (copied) ok(`copied ${copied} Prisma package(s) into the bundle`);
 else console.log("  \x1b[33m!\x1b[0m no Prisma packages found in node_modules — skipping");
 
+// The generated client resolves the schema through a path relative to its own
+// location ("../../../prisma"), which from inside the standalone bundle means
+// .next/standalone/prisma. The schema has to be there or Prisma cannot find
+// the datasource.
+step("Copying the Prisma schema");
+const prismaSrc = join(ROOT, "prisma");
+if (existsSync(prismaSrc)) {
+  cpSync(prismaSrc, join(standalone, "prisma"), { recursive: true });
+  ok("prisma -> .next/standalone/prisma");
+}
+
 // Carry .env into the bundle so `node .next/standalone/server.js` boots with
-// the right configuration without extra environment variables.
+// the right configuration without extra environment variables. The generated
+// client also looks for it at "../../../.env" relative to itself, which lands
+// on the bundle root.
 const envSrc = join(ROOT, ".env");
 if (existsSync(envSrc)) {
   cpSync(envSrc, join(standalone, ".env"));

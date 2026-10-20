@@ -49,6 +49,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# The generated Prisma client resolves the schema through a path relative to
+# its own location, which from inside the bundle means ./prisma — so the
+# schema has to be copied in as well.
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
 # The standalone bundle ships a minimal node_modules; the Prisma query engine
 # and the generated client live in the root install and must be copied over.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
