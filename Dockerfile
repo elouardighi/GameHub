@@ -33,7 +33,7 @@ RUN bunx prisma generate
 RUN bunx next build
 
 # ---------- runner ----------
-FROM node:20-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
