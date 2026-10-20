@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/elouardighi/GameHub/security/advisories/new
+    about: Please report security issues privately — do not open a public issue.
+  - name: Question or help
+    url: https://github.com/elouardighi/GameHub/discussions
+    about: Ask a question or get help setting GameHub up.
+  - name: Contribution guide
+    url: https://github.com/elouardighi/GameHub/blob/main/CONTRIBUTING.md
+    about: How to install, run, test and contribute to GameHub.

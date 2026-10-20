@@ -5,16 +5,21 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  build:
-    name: Lint & Build
-    runs-on: ubuntu-latest
+env:
+  # The gateway port is configurable so CI does not need root to bind :81
+  GATEWAY_PORT: "8081"
+  NEXTAUTH_URL: "http://localhost:8081"
 
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,20 +29,124 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Lint
+        run: bun run lint
+
+  test:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile
+          cd mini-services/chat-service && bun install --frozen-lockfile
 
       - name: Generate Prisma client
         run: bunx prisma generate
         env:
           DATABASE_URL: file:../db/custom.db
 
-      - name: Lint
-        run: bun run lint
+      - name: Sync database schema
+        run: bunx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: file:../db/custom.db
 
       - name: Build
         run: bun run build
         env:
           DATABASE_URL: file:../db/custom.db
-          NEXTAUTH_URL: http://localhost:3000
+          NEXTAUTH_URL: ${{ env.NEXTAUTH_URL }}
           NEXTAUTH_SECRET: ci-secret-not-used-for-real-sessions
+
+      - name: Install Caddy
+        run: |
+          curl -sSL -o /tmp/caddy.tar.gz \
+            https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_linux_amd64.tar.gz
+          tar -xzf /tmp/caddy.tar.gz -C /tmp caddy
+          sudo install -m 0755 /tmp/caddy /usr/local/bin/caddy
+          caddy version
+
+      - name: Start the Socket.io chat service
+        run: |
+          cd mini-services/chat-service
+          nohup bun run index.ts > "$GITHUB_WORKSPACE/chat-service.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/chat-service.pid"
+
+      - name: Start the Next.js production server
+        run: |
+          nohup bun run start > "$GITHUB_WORKSPACE/next-server.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/next-server.pid"
+
+      - name: Start the Caddy gateway
+        run: |
+          nohup caddy run --config Caddyfile --adapter caddyfile > "$GITHUB_WORKSPACE/caddy.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/caddy.pid"
+
+      - name: Wait for the stack to be ready
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -fsS "http://localhost:8081/api/servers" > /dev/null 2>&1 \
+               && curl -fsS "http://localhost:8081/?XTransformPort=3003&EIO=4&transport=polling" > /dev/null 2>&1; then
+              echo "stack ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::stack did not become ready"
+          echo "--- chat service ---"; cat "$GITHUB_WORKSPACE/chat-service.log" || true
+          echo "--- next server ---";  tail -60 "$GITHUB_WORKSPACE/next-server.log" || true
+          echo "--- caddy ---";         cat "$GITHUB_WORKSPACE/caddy.log" || true
+          exit 1
+
+      - name: API smoke test
+        run: bun run test:api -- "http://localhost:8081"
+
+      - name: Socket.io integration test
+        run: bun run test:socket -- "http://localhost:8081"
+
+      - name: Upload service logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-logs
+          path: |
+            chat-service.log
+            next-server.log
+            caddy.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop services
+        if: always()
+        run: |
+          for f in chat-service.pid next-server.pid caddy.pid; do
+            if [ -f "$GITHUB_WORKSPACE/$f" ]; then
+              kill "$(cat "$GITHUB_WORKSPACE/$f")" 2>/dev/null || true
+            fi
+          done

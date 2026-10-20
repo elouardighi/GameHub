@@ -1,0 +1,64 @@
+version: 2
+
+updates:
+  # npm dependencies (the root workspace)
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+    groups:
+      next-ecosystem:
+        patterns:
+          - "next*"
+          - "eslint-config-next"
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "react-dom"
+      prisma-ecosystem:
+        patterns:
+          - "prisma*"
+          - "@prisma/*"
+
+  # The Socket.io chat service has its own lockfile
+  - package-ecosystem: npm
+    directory: "/mini-services/chat-service"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - chat-service
+
+  # Docker base images
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - docker
+
+  - package-ecosystem: docker
+    directory: "/mini-services/chat-service"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - docker
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - ci

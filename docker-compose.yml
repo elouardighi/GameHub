@@ -1,0 +1,88 @@
+# GameHub — full stack with Docker Compose.
+#
+#   cp .env.example .env
+#   docker compose up --build
+#   open http://localhost:81
+#
+# Four services:
+#   db-init   one-shot: prepares the SQLite database, then exits
+#   app       Next.js 16 standalone server   :3000
+#   chat      Socket.io chat service          :3003
+#   gateway   Caddy reverse proxy             :81
+#
+# The gateway implements the same `?XTransformPort=<port>` routing the app
+# expects, so the browser connects to a single origin.
+
+services:
+  db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: gamehub-db-init
+    restart: "no"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: "file:/data/custom.db"
+      # Set SEED_DEMO=false to start from an empty database.
+      SEED_DEMO: "${SEED_DEMO:-true}"
+    command: ["sh", "/app/scripts/docker-db-init.sh"]
+    volumes:
+      - gamehub-data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gamehub-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: "file:/data/custom.db"
+      NEXTAUTH_URL: "${NEXTAUTH_URL:-http://localhost:81}"
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET:-change-me-openssl-rand-base64-32}"
+    volumes:
+      - gamehub-data:/data
+    expose:
+      - "3000"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      chat:
+        condition: service_healthy
+
+  chat:
+    build:
+      context: .
+      dockerfile: mini-services/chat-service/Dockerfile
+    container_name: gamehub-chat
+    restart: unless-stopped
+    environment:
+      PORT: "3003"
+    expose:
+      - "3003"
+
+  gateway:
+    image: caddy:2-alpine
+    container_name: gamehub-gateway
+    restart: unless-stopped
+    environment:
+      # In Compose the services reach each other by name, not by localhost.
+      APP_UPSTREAM: "app:3000"
+      CHAT_HOST: "chat"
+    ports:
+      - "81:81"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  gamehub-data:
+  caddy-data:
+  caddy-config:

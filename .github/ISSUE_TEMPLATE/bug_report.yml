@@ -1,0 +1,79 @@
+name: Bug report
+description: Something in GameHub isn't working as expected
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. The more context you give,
+        the faster it can be fixed.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong? Include the exact error message if you have one.
+      placeholder: When I click "Try the demo user", nothing happens and the console shows …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: I expected the demo login to sign me in and land on the Valorant Hub channel.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A minimal reproduction, if you have one.
+      value: |
+        1.
+        2.
+        3.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area is affected?
+      options:
+        - Login / signup
+        - Chat and messaging
+        - Voice / video / screen share
+        - Servers and channels
+        - Clans
+        - Quests and activities
+        - Friends
+        - Settings and profile
+        - Deployment / install
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: "OS, Node/Bun version, browser, and whether you run it with Docker or locally."
+      placeholder: Windows 11, Bun 1.4.3, Chrome 140, local `npm run dev`
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or console output
+      description: Copy any relevant server or browser console output.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and this has not been reported
+          required: true
+        - label: I am using the latest release

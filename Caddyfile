@@ -1,22 +1,36 @@
-:81 {
+# The gateway port can be overridden with the GATEWAY_PORT environment
+# variable (useful in CI, and when port 81 is already taken).
+#
+#   caddy run --config Caddyfile
+#   GATEWAY_PORT=8080 caddy run --config Caddyfile
+#
+# The upstreams are overridable too, because in Docker Compose the services
+# reach each other by name rather than by localhost:
+#
+#   APP_UPSTREAM=app:3000 CHAT_HOST=chat caddy run --config Caddyfile
+#
+# Note the colon OUTSIDE the placeholder — without it Caddy would read the
+# bare number as a hostname and try to issue a TLS certificate for it.
+#
+# Routing:
+#   /?XTransformPort=<port>  ->  {$CHAT_HOST}:<port>   (the Socket.io chat service)
+#   everything else          ->  {$APP_UPSTREAM}       (the Next.js app)
+
+:{$GATEWAY_PORT:81} {
 	@transform_port_query {
 		query XTransformPort=*
 	}
 
 	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
+		reverse_proxy {$CHAT_HOST:localhost}:{query.XTransformPort} {
 			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
 			header_up X-Real-IP {remote_host}
 		}
 	}
 
 	handle {
-		reverse_proxy localhost:3000 {
+		reverse_proxy {$APP_UPSTREAM:localhost:3000} {
 			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
 			header_up X-Real-IP {remote_host}
 		}
 	}

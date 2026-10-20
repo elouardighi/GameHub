@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest a new feature or improvement for GameHub
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        GameHub is a community project — tell us what you would love to see and
+        why it matters to you.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the use case rather than the implementation.
+      placeholder: When I join a clan I want to see which of my friends are already in it …
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would the feature look like?
+      placeholder: A "Suggested" tab next to All members showing friends who are already in the clan.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area?
+      options:
+        - Chat and messaging
+        - Voice / video / screen share
+        - Servers and channels
+        - Clans
+        - Quests and activities
+        - Friends and profiles
+        - Settings
+        - Developer experience / tooling
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have considered
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and this has not been requested
+          required: true
